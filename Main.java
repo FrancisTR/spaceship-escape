@@ -5,6 +5,9 @@ import textio.*;
 
 /* This program runs a single-player text-based adventure game called "Spaceship Escape". */
 
+
+//ToDo - If alien is defeated in a room, remove it from the room so it can be rexplored without fighting
+
 public class Main {
 
     public static void main(String[] args) {
@@ -128,7 +131,7 @@ public class Main {
 
         int roomCount = 1;
         for (Room room : rooms) {
-            System.out.println(roomCount + ". " + room.getName());
+            System.out.println(roomCount + ". " + room.getName() + room.hasLaunchCode());
             roomCount++;
         }
 
@@ -212,13 +215,33 @@ public class Main {
 
     //When the player opens a cache they may find extra health, a weapon to increase their damage, or the launch code to end the game
     public static void openCache(Room room) {
-        //int random = (int)(Math.random()*3) +1;
+        
         System.out.println("You open the cache...");
         if (room.hasLaunchCode()) {
             player.setHasLaunchCode(true);
             System.out.println("You found the escape pod launch code! Remember it: " + launchCode);
             //They player found the launch codes so can escape the ship and end the game
-            escape();
+            System.out.println("""
+                Make a choice:
+                1. Go straight to the escape pod.
+                2. Continue exploring.
+            """);
+            int choice = TextIO.getlnInt();
+            clearConsole();
+
+            while(choice < 1 || choice > 2) {
+                System.out.println("Invalid Selection, please try again.");
+                choice = TextIO.getlnInt();
+            }
+
+            if (choice == 1) {
+                escape();
+            }
+            else {
+                rooms.add(new EscapePod());
+                continueGame();
+            }
+            
         }
         else {
             int random = (int)(Math.random() * 2) + 1;
@@ -293,7 +316,13 @@ public class Main {
 
         }
         
-        exploreRoom(rooms.get(choice - 1));
+        if (rooms.get(choice - 1).getName().equals("Escape Pod")){
+            escape();
+        }
+        else {
+            exploreRoom(rooms.get(choice - 1));
+        }
+        
     }
 
     //This is called when a Player chooses to fight an Alien
