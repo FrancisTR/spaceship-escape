@@ -185,7 +185,13 @@ public class Main {
             }
 
             if (choice == 1) {
-                fight(player.getHealth(), alien.getHealth());
+                //if the player wins, remove the alien from the room so they don't have to fight it again if they re-enter the room later
+                if (fight(player.getHealth(), alien.getHealth())) {
+                    room.setHasAlien(false);
+                }
+                else {
+                    room.setHasAlien(true);
+                }              
             }
             else {
                 continueGame();
@@ -206,10 +212,8 @@ public class Main {
             }
         }
         
-        //The player might find the launch code to end the game when they open the cache
-        //If they don't find the lauch codes then continue
-        if (!player.hasLaunchCode())
-            continueGame();
+        
+        continueGame();
 
     }
 
@@ -249,6 +253,7 @@ public class Main {
                 System.out.println("You find some food! Health increased by 20!");
                 player.setHealth(player.getHealth() + 20);
                 System.out.println("There's nothing left to see in here...");
+                room.setHasCache(false); //remove the cash from the room so the player can't get it again if they re-enter the room
                 continueGame();
             }
             else {
@@ -256,6 +261,7 @@ public class Main {
                 player.setMaxDamage(player.getMaxDamage() + 20);
                 player.setHealth(player.getHealth() + 20);
                 System.out.println("There's nothing left to see in here...");
+                room.setHasCache(false); //remove the cash from the room so the player can't get it again if they re-enter the room
                 continueGame();
             }
             
