@@ -1,12 +1,16 @@
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Random;
+import java.net.URI;
+import java.awt.Desktop;
+import java.io.*; 
 
 import textio.*;
 
 /* This program runs a single-player text-based adventure game called "Spaceship Escape". */
 
 
-//ToDo - If alien is defeated in a room, remove it from the room so it can be rexplored without fighting
+//ToDo - If alien is defeated in a room, remove it from the room so it can be re-explored without fighting
 
 public class Main {
 
@@ -131,7 +135,7 @@ public class Main {
 
         int roomCount = 1;
         for (Room room : rooms) {
-            System.out.println(roomCount + ". " + room.getName() + room.hasLaunchCode());
+            System.out.println(roomCount + ". " + room.getName() + room.hasLaunchCode()); //testing
             roomCount++;
         }
 
@@ -190,7 +194,9 @@ public class Main {
                     room.setHasAlien(false);
                 }
                 else {
+                    //player has lost the fight
                     room.setHasAlien(true);
+                    //add GAME OVER method or reset player health to 50 or player lives (3) 
                 }              
             }
             else {
@@ -380,6 +386,7 @@ public class Main {
             return playerWins;
         } else {
             System.out.println("The alien wins the battle!");
+            //set aliens health
             return playerWins;
         }
     }
@@ -395,6 +402,15 @@ public class Main {
         // Ensures that the escape codes are immediately sent to the console.
         System.out.flush();
 
+    }
+
+    //A joke method to surprise the player!
+    public static void rickRoll() throws Exception{
+        Desktop desk = Desktop.getDesktop();
+
+        // now we enter our URL that we want to open in our
+        // default browser
+        desk.browse(new URI("https://www.youtube.com/watch?v=oHg5SJYRHA0"));
     }
 
 }
