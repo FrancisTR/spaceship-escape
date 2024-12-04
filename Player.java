@@ -42,4 +42,11 @@ public class Player {
     public void setMaxDamage(int damage) {
         this.maxDamage = damage;
     }
+
+    public void getPlayerStats(){
+        System.out.println("-------------------------------");
+        System.out.println("Player name: "+getName());
+        System.out.println("Health: "+getHealth());
+        System.out.println("-------------------------------");
+    }
 }
