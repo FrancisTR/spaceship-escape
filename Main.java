@@ -9,21 +9,35 @@ import textio.*;
 
 /* This program runs a single-player text-based adventure game called "Spaceship Escape". */
 
+/*
+    Main requirement: Create a text-based, role-playing game. 
+
+    1.  A configuration file for saving interesting aspects of the game, such as player names and high scores.  Even some player character customization.   
+
+    2.  A Save and restore feature.  You should be able to save your game, exit, and return to exactly where you left off. 
+
+    3.  An undo feature.  You should be able to make a mistake and then invoke undo and continue from before your mistake. (This will sort of allow cheating, so you may want to have undo be a configurable feature) 
+
+    5. Optional. Expand requirement #2 with autosave so a player never has to hit save.
+
+    7. Unit test something!
+ */
+
 
 //ToDo - If alien is defeated in a room, remove it from the room so it can be re-explored without fighting
 
 public class Main {
 
-    public static void main(String[] args) {
-        introduceScenario();
-        startGame();
+    public static void main(String[] args) throws Exception {
+        introduceScenario(); //Introduction
+        startGame(); //Game Start
     }
 
     //Global variables to hold the available rooms and the current Player.
     public static ArrayList<Room> rooms = createRooms();
     public static Player player;
     public static int launchCode = (int)(Math.random() * 9000) + 1000; //set the launchcode to a random 4 digit number
-
+    public static boolean easyMode = false;
     /* ---------- GAME METHODS --------- */
 
     //The introduction to the game
@@ -121,12 +135,16 @@ public class Main {
 
     //Starts the game loop
     //Initiates players first choice of room to enter
-    public static void startGame() {
+    public static void startGame() throws Exception {
         
         System.out.println("ENTER YOUR NAME: ");
         String name = TextIO.getlnString();
         player = new Player(name);
 
+        System.out.println("Do you want to enable easy mode? (y/n)");
+        easyMode = TextIO.getBoolean();
+        
+        player.getPlayerStats();
         System.out.println("""
                 You go out into the corridor of the ship.
                 You must explore the rooms to find the launch code.
@@ -157,7 +175,7 @@ public class Main {
 
     //Gives player options when they enter a room.
     //What happens depends on the random values assinged to instance variables in the Room class
-    public static void exploreRoom(Room room) {
+    public static void exploreRoom(Room room) throws Exception {
         System.out.println(room.getName());
         
         System.out.println("You entered the " + room.getName() + "...");
@@ -206,7 +224,7 @@ public class Main {
 
         if (room.hasCache()) {
             System.out.println("You notice a cache in the room, there might be something useful in it!");
-            System.out.println("Open the cache?");
+            System.out.println("Open the cache? (y/n)");
             boolean choice = TextIO.getBoolean();
 
             if (choice) {
@@ -218,42 +236,64 @@ public class Main {
             }
         }
         
-        
         continueGame();
 
     }
 
     //When the player opens a cache they may find extra health, a weapon to increase their damage, or the launch code to end the game
-    public static void openCache(Room room) {
+    public static void openCache(Room room) throws Exception {
         
         System.out.println("You open the cache...");
         if (room.hasLaunchCode()) {
             player.setHasLaunchCode(true);
             System.out.println("You found the escape pod launch code! Remember it: " + launchCode);
             //They player found the launch codes so can escape the ship and end the game
+            // System.out.println("""
+            //     Make a choice:
+            //     1. Go straight to the escape pod.
+            //     2. Continue exploring.
+            // """);
+            // int choice = TextIO.getlnInt();
+            // clearConsole();
+
+            // while(choice < 1 || choice > 2) {
+            //     System.out.println("Invalid Selection, please try again.");
+            //     choice = TextIO.getlnInt();
+            // }
+
+            // if (choice == 1) {
+            //     escape();
+            // }
+            // else {
+            //     rooms.add(new EscapePod());
+            //     continueGame();
+            // }
             System.out.println("""
                 Make a choice:
                 1. Go straight to the escape pod.
                 2. Continue exploring.
             """);
-            int choice = TextIO.getlnInt();
-            clearConsole();
-
-            while(choice < 1 || choice > 2) {
-                System.out.println("Invalid Selection, please try again.");
-                choice = TextIO.getlnInt();
-            }
-
-            if (choice == 1) {
-                escape();
-            }
-            else {
-                rooms.add(new EscapePod());
-                continueGame();
-            }
-            
+            do{
+                int choice = TextIO.getlnInt();
+                switch(choice){
+                    case 1 ->{ //Go to escape pod
+                        clearConsole();
+                        escape();
+                    }
+                    case 2 ->{ //Continue searching in different rooms
+                        clearConsole();
+                        rooms.add(new EscapePod());
+                        continueGame();
+                    }
+                    default ->{
+                        System.out.println("Invalid Selection, please try again.");
+                    }
+                }
+            }while(true);
         }
         else {
+
+            //TODO: Add items?
             int random = (int)(Math.random() * 2) + 1;
             if (random == 1) {
                 System.out.println("You find some food! Health increased by 20!");
@@ -275,7 +315,8 @@ public class Main {
     }
 
     //This is called when the player has found the launch codes and the game ends
-    public static void escape() {
+    public static void escape() throws Exception {
+        int attempts = 3;
 
         String[][] keypad = new String[][] {
             {"1","2","3"},
@@ -291,24 +332,30 @@ public class Main {
             }
             System.out.println();
         }
-        System.out.println("ENTER THE LAUNCH CODE TO ESCAPE:");
-        int input = TextIO.getlnInt();
-        if (launchCode == input) {
-            System.out.println("CONGRATULATIONS " + player.getName().toUpperCase() + "! YOU HAVE ESCAPED THE SPACESHIP WITH " + player.getHealth() + " HEALTH REMAINING!");
-            System.exit(0);
-        }
-        else {
-            System.out.println("Sorry that's not the correct code! Go back to where you found it and check again!");
-            continueGame();
-        }
+
+        //Player has 3 tries
+        do{
+            System.out.println("ENTER THE LAUNCH CODE TO ESCAPE. YOU HAVE "+attempts+" ATTEMPTS: ");
+            int input = TextIO.getlnInt();
+            if (launchCode == input) {
+                System.out.println("CONGRATULATIONS " + player.getName().toUpperCase() + "! YOU HAVE ESCAPED THE SPACESHIP WITH " + player.getHealth() + " HEALTH REMAINING!");
+                System.exit(0);
+            }
+            else {
+                attempts -= 1;
+                // continueGame();
+            }
+        }while(attempts > 0);
+        rickRoll();
     }
 
     //This is called to allow the player to leave a room and continue the game
-    public static void continueGame() 
+    public static void continueGame() throws Exception 
     {
         
         System.out.println("You go back out into the corridor of the ship.");
         System.out.println("Choose which room to explore next:");
+        player.getPlayerStats();
 
         int roomCount = 1;
         for (Room room : rooms) {
@@ -325,7 +372,6 @@ public class Main {
         while(choice > rooms.size()) {
             System.out.println("Invalid Selection, please try again.");
             choice = TextIO.getlnInt();
-
         }
         
         if (rooms.get(choice - 1).getName().equals("Escape Pod")){
@@ -348,10 +394,12 @@ public class Main {
         int alienMinDamage = 5, alienMaxDamage = 25;
         
         System.out.println("The fight begins!");
+        System.out.println("-----------------------------------------");
         System.out.println("Player Health: " + playerHealth);
         System.out.println("Alien Health: " + alienHealth);
+        System.out.println("-----------------------------------------");
 
-        // Fight loop
+        // Fight loop TODO: Use easyMode to undo the attack!
         while (playerHealth > 0 && alienHealth > 0) {
             // Player's turn to attack
             int playerDamage = random.nextInt(playerMaxDamage - playerMinDamage + 1) + playerMinDamage;
@@ -410,7 +458,10 @@ public class Main {
 
         // now we enter our URL that we want to open in our
         // default browser
+        System.out.println("You have failed to enter the escape pod! Game Over!");
+        System.out.println("Never gonna give you up though! So next time, make sure you'll never let us down!");
         desk.browse(new URI("https://www.youtube.com/watch?v=oHg5SJYRHA0"));
+        System.exit(0);
     }
 
 }
