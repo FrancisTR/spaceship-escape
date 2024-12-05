@@ -1,7 +1,8 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class Room {
+public class Room implements Serializable{
     
     private String name;
     private boolean hasAlien;
@@ -33,7 +34,7 @@ public class Room {
     
     public Room() {
         //When a room is instantiated, choose a random name from the list.
-        int random = (int)(Math.random() * roomNames.size()) +1;
+        int random = (int)(Math.random() * roomNames.size() - 1) +1;
         this.name = roomNames.get(random);
         this.hasAlien = (int) (Math.random() * 2) + 1 == 1 ? true : false;
         this.hasCache = (int) (Math.random() * 2) + 1 == 1 ? true : false;

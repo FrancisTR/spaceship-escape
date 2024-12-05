@@ -1,4 +1,7 @@
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Random;
 import java.net.URI;
@@ -28,7 +31,7 @@ public class Main {
     }
 
     // Global variables to hold the available rooms and the current Player.
-    public static ArrayList<Room> rooms = createRooms();
+    public static ArrayList<Room> rooms;
     public static Player player;
     public static int launchCode = (int) (Math.random() * 9000) + 1000; // set the launchcode to a random 4 digit number
     public static boolean easyMode = false;
@@ -96,14 +99,21 @@ public class Main {
         }
 
         if (noRoomHasCache) {
-            int random1 = (int) (Math.random() * rooms.size()) + 1;
-            rooms.get(random1).setHasCache(true);
+            int random1 = (int) (Math.random() * rooms.size() -1) + 1;
+            if (!rooms.get(random1).getName().equals("Escape Pod"))
+            {
+                rooms.get(random1).setHasCache(true);
+            }
+            
 
         }
 
         if (noRoomHasAlien) {
-            int random2 = (int) (Math.random() * rooms.size()) + 1;
-            rooms.get(random2).setHasAlien(true);
+            int random2 = (int) (Math.random() * rooms.size() -1) + 1;
+            if (!rooms.get(random2).getName().equals("Escape Pod"))
+            {
+                rooms.get(random2).setHasAlien(true);
+            }
         }
 
         // Find all rooms with hasCache = true
@@ -131,11 +141,40 @@ public class Main {
     // Starts the game loop
     // Initiates players first choice of room to enter
     public static void startGame() throws Exception {
-
-        System.out.print("ENTER YOUR NAME: ");
-        String name = TextIO.getlnString();
-        player = new Player(name);
-
+        String name;
+        System.out.println("Would you like to load a previous player? y/n");
+        boolean input = TextIO.getBoolean();
+        if (input) {
+            String filePath = "player.ser";
+            Path path = Paths.get(filePath);
+            boolean playerExists = Files.exists(path);
+            if (playerExists) {
+                player = SaveGame.load();
+                rooms = player.getRooms();
+                System.out.println("Player Loaded!");
+            } else {
+                System.out.println("Sorry no player exists to load!");
+                System.out.println("ENTER YOUR NAME: ");
+                do {
+                    name = TextIO.getlnString();
+                } while(name.equals(""));
+                
+                player = new Player(name);
+                player.setRooms(createRooms());
+                SaveGame.save(player);
+            }
+        } else {
+            System.out.println("ENTER YOUR NAME: ");
+            do {
+                name = TextIO.getlnString();
+            } while(name.equals(""));
+            player = new Player(name);
+            player.setRooms(createRooms());
+            SaveGame.save(player);
+        }
+        
+        rooms = player.getRooms();
+        
         System.out.print("Do you want to enable easy mode? (y/n): ");
         easyMode = TextIO.getBoolean();
         clearConsole();
@@ -149,14 +188,21 @@ public class Main {
 
         int roomCount = 1;
         for (Room room : rooms) {
-            System.out.println(roomCount + ". " + room.getName() + room.hasLaunchCode()); // testing
+            System.out.println(roomCount + ". " + room.getName());
             roomCount++;
         }
+        System.out.println("0. EXIT GAME");
 
         System.out.print("Enter Your Choice: ");
 
         int choice = TextIO.getlnInt();
         System.out.println();
+
+        if (choice == 0) {
+            SaveGame.save(player);
+            System.out.println("Game Exited!");
+            System.exit(0);
+        }
 
         while (choice > rooms.size()) {
             System.out.println("Invalid Selection, please try again.");
@@ -178,10 +224,16 @@ public class Main {
 
         // If there's no cache AND no alien in the room
         if (!room.hasCache() && !room.hasAlien()) {
-            System.out.println("Hmmm...doesn't seem to be anything of interest in here...");
-            System.out.println("ENTER to go back into the corridor:");
-            TextIO.getln();
-            continueGame();
+            if (room.getName().equals("Escape Pod")) {
+                escape();
+            }
+            else {
+                System.out.println("Hmmm...doesn't seem to be anything of interest in here...");
+                System.out.println("ENTER to go back into the corridor:");
+                TextIO.getln();
+                continueGame();
+            }
+            
         }
 
         // If there is an Alen player has a choice to fight or run away
@@ -243,6 +295,7 @@ public class Main {
         if (room.hasLaunchCode()) {
             player.setHasLaunchCode(true);
             System.out.println("You found the escape pod launch code! Remember it: " + launchCode);
+            SaveGame.save(player);
             // They player found the launch codes so can escape the ship and end the game
             // System.out.println("""
             // Make a choice:
@@ -278,7 +331,10 @@ public class Main {
                     }
                     case 2 -> { // Continue searching in different rooms
                         clearConsole();
-                        rooms.add(new EscapePod());
+                        if (!rooms.get(rooms.size() -1).getName().equals("Escape Pod")) 
+                        {
+                            rooms.add(new EscapePod());
+                        }
                         continueGame();
                     }
                     default -> {
@@ -351,6 +407,7 @@ public class Main {
 
     // This is called to allow the player to leave a room and continue the game
     public static void continueGame() throws Exception {
+        SaveGame.save(player);
         System.out.println("You go back out into the corridor of the ship.");
         System.out.println("Choose which room to explore next:");
         player.getPlayerStats();
@@ -360,10 +417,17 @@ public class Main {
             System.out.println(roomCount + ". " + room.getName());
             roomCount++;
         }
+        System.out.println("0. EXIT GAME");
 
         System.out.print("Enter Your Choice: ");
         int choice = TextIO.getlnInt();
         System.out.println();
+
+        if (choice == 0) {
+            SaveGame.save(player);
+            System.out.println("Game Exited!");
+            System.exit(0);
+        }
 
         while (choice > rooms.size()) {
             System.out.println("Invalid Selection, please try again.");
